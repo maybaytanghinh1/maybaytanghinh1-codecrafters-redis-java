@@ -30,7 +30,6 @@ public class Main {
       while ((clientMessage = in.readLine()) != null) {
         if (clientMessage.equals("PING")) {
           out.println("+PONG\r");
-          break;
         }
       }
 
