@@ -47,8 +47,12 @@ public class Main {
                 if (clientMessage.equals("PING")) {
                     out.println("+PONG\r");
                 }   
-                // 
-                out.println(clientMessage);
+                //Check if it echo. 
+                
+                // int length = s.length();
+                // return "$" + length + "\r\n" + s + "\r\n";
+                // out.println(clientMessage);
+                out.println("Hello world");
             }
         } catch (IOException e) {
             System.err.println("IOException: " + e.getMessage());
