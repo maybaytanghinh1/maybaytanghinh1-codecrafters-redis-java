@@ -53,7 +53,7 @@ public class Main {
                 if ("ECHO".equalsIgnoreCase(clientMessage)) {
                     in.readLine();
                     String message = in.readLine(); 
-                    out.print(String.format("$%d\r\n%s\r\n", message.length(), message));
+                    out.println(String.format("$%d\r\n%s\r\n", message.length(), message));
                 }
             }
         } catch (IOException e) {
