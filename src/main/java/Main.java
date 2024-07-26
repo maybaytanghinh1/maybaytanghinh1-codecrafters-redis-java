@@ -51,12 +51,10 @@ public class Main {
                 }   
                 //Check if it echo. 
                 if ("ECHO".equalsIgnoreCase(clientMessage)) {
-                    out.println("Test hello world");
+                    in.readLine();
+                    String message = in.readLine(); 
+                    out.println(String.format("$%d\r\n%s\r\n", message.length(), message));
                 }
-                // int length = s.length();
-                // return "$" + length + "\r\n" + s + "\r\n";
-                // out.println(clientMessage);
-                out.println("Hello world");
             }
         } catch (IOException e) {
             System.err.println("IOException: " + e.getMessage());
