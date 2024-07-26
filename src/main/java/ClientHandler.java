@@ -2,10 +2,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.HashMap;
 
 public class ClientHandler implements Runnable {
-    private final Socket socket;
+    HashMap<String, String> m = new HashMap<String, String>();
 
+    private final Socket socket;
+    
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
@@ -36,6 +39,23 @@ public class ClientHandler implements Runnable {
                     } else {
                         // Handle the case where message is null
                         socket.getOutputStream().write("Error: No message received.\r\n".getBytes());
+                    }
+                } else if ("SET".equalsIgnoreCase(request)) {
+                    input.readLine(); 
+                    String key = input.readLine();
+                    String value = input.readLine(); 
+                    m.put(key, value); 
+                    socket.getOutputStream().write("+OK\\r\\n".getBytes());
+                } else if ("GET".equalsIgnoreCase(request)) {
+                    input.readLine(); 
+                    String key = input.readLine();  
+                    String value = m.get(key);
+                    if (value != null) {
+                        socket.getOutputStream().write(
+                            String.format("$%d\r\n%s\r\n", value.length(), value)
+                                .getBytes());
+                    } else {
+                        socket.getOutputStream().write("-1\\r\\n".getBytes());
                     }
                 }
             }
