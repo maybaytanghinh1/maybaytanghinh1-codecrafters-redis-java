@@ -2,7 +2,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Server {
+public class Main {
     private static final int PORT = 12345; // Port number for the server
 
     public static void main(String[] args) {
