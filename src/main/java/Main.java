@@ -46,7 +46,9 @@ public class Main {
             while ((clientMessage = in.readLine()) != null) {
                 if (clientMessage.equals("PING")) {
                     out.println("+PONG\r");
-                }
+                }   
+                // 
+                out.println(clientMessage);
             }
         } catch (IOException e) {
             System.err.println("IOException: " + e.getMessage());
