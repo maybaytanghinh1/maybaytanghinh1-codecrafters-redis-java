@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import javax.management.openmbean.OpenDataException;
+
 public class Main {
     public static void main(String[] args) {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -48,7 +50,9 @@ public class Main {
                     out.println("+PONG\r");
                 }   
                 //Check if it echo. 
-                
+                if ("ECHO".equalsIgnoreCase(clientMessage)) {
+                    out.println("Test hello world");
+                }
                 // int length = s.length();
                 // return "$" + length + "\r\n" + s + "\r\n";
                 // out.println(clientMessage);
