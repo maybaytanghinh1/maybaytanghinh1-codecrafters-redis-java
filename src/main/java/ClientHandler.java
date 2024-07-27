@@ -80,7 +80,7 @@ public class ClientHandler implements Runnable {
                     Main.Value v = m.get(key);     
                     if (v != null) {
                         if (v.isExpired()) {
-                            socket.getOutputStream().write("-1\r\n".getBytes());
+                            socket.getOutputStream().write("$-1\r\n".getBytes());
                         }
                         System.out.print("current time");
                         System.out.println(System.currentTimeMillis());
@@ -89,7 +89,7 @@ public class ClientHandler implements Runnable {
                             String.format("$%d\r\n%s\r\n", v.data.length(), v.data)
                                 .getBytes());
                     } else {
-                        socket.getOutputStream().write("-1\r\n".getBytes());
+                        socket.getOutputStream().write("$-1\r\n".getBytes());
                     }
                 }
             }
