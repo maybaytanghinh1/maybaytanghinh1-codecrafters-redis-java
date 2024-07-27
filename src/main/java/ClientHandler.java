@@ -17,16 +17,20 @@ public class ClientHandler implements Runnable {
     public void run() {
         try (BufferedReader input = new BufferedReader(
                 new InputStreamReader(socket.getInputStream()))) {
-
+            int numberOfCommands = 0; 
             while (true) {
                 String request = input.readLine(); 
-                int numberOfCommands = 0; 
+                
                 if (request == null) {
                     continue;
                 } 
-                if (request.startsWith("*")) {
+                // System.out.println(request);
+                if (request.contains("*")) {
                     try {
-                        numberOfCommands = Integer.parseInt(request.substring(1).trim());
+                        // Extract the part after the '*'
+                        String numberString = request.substring(1);
+                        // Parse this substring to an integer
+                        numberOfCommands = Integer.parseInt(numberString);
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid number of commands: " + request);
                         continue;
@@ -60,7 +64,9 @@ public class ClientHandler implements Runnable {
                         if ("px".equalsIgnoreCase(cmd)) {
                             input.readLine();   
                             String expiry = input.readLine();  
+                            System.out.println(Long.parseLong(expiry));
                             long expiryTime = System.currentTimeMillis() + Long.parseLong(expiry);
+                            System.out.println(expiryTime);
                             m.put(key, new Main.Value(value, expiryTime)); 
                         }  
                     } else {
@@ -77,6 +83,9 @@ public class ClientHandler implements Runnable {
                         if (v.isExpired()) {
                             socket.getOutputStream().write("-1\r\n".getBytes());
                         }
+                        System.out.print("current time");
+                        System.out.println(System.currentTimeMillis());
+                        System.out.println(v.expiryTime);
                         socket.getOutputStream().write(
                             String.format("$%d\r\n%s\r\n", v.data.length(), v.data)
                                 .getBytes());
