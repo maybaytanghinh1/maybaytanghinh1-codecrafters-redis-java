@@ -2,14 +2,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
-    private final ConcurrentHashMap<String, String> m;
+    private final ConcurrentHashMap<String, Main.Value> m;
     private final Socket socket;
     
-    public ClientHandler(Socket socket, ConcurrentHashMap<String, String> m) {
+    public ClientHandler(Socket socket, ConcurrentHashMap<String, Main.Value> m) {
         this.socket = socket;
         this.m = m;
     }
@@ -20,11 +19,19 @@ public class ClientHandler implements Runnable {
                 new InputStreamReader(socket.getInputStream()))) {
 
             while (true) {
-                String request = input.readLine();
+                String request = input.readLine(); 
+                int numberOfCommands = 0; 
                 if (request == null) {
                     continue;
+                } 
+                if (request.startsWith("*")) {
+                    try {
+                        numberOfCommands = Integer.parseInt(request.substring(1).trim());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid number of commands: " + request);
+                        continue;
+                    }
                 }
-                
                 if ("PING".equals(request)) {
                     socket.getOutputStream().write("+PONG\r\n".getBytes());
                 } else if ("ECHO".equalsIgnoreCase(request)) {
@@ -46,16 +53,32 @@ public class ClientHandler implements Runnable {
                     String key = input.readLine();
                     input.readLine(); 
                     String value = input.readLine(); 
-                    System.out.println(key);
-                    m.put(key, value); 
+                    // This readLine does ntow ork becaues, it is not null, it does not have any input any
+                    if (numberOfCommands > 3) {
+                        // Put the expery date in this, and this will be fine. 
+                        String cmd = input.readLine(); // This is expectd to be px
+                        if ("px".equalsIgnoreCase(cmd)) {
+                            input.readLine();   
+                            String expiry = input.readLine();  
+                            long expiryTime = System.currentTimeMillis() + Long.parseLong(expiry);
+                            m.put(key, new Main.Value(value, expiryTime)); 
+                        }  
+                    } else {
+                        m.put(key, new Main.Value(value, Long.MAX_VALUE)); 
+                    }
+                    // It can be the time, 
+                    // 1. Check if there is pk, and check if there is time period, when add to the map, also add the end time
                     socket.getOutputStream().write("+OK\r\n".getBytes());
                 } else if ("GET".equalsIgnoreCase(request)) {
                     input.readLine(); 
                     String key = input.readLine(); 
-                    String v = m.get(key);
+                    Main.Value v = m.get(key);     
                     if (v != null) {
+                        if (v.isExpired()) {
+                            socket.getOutputStream().write("-1\r\n".getBytes());
+                        }
                         socket.getOutputStream().write(
-                            String.format("$%d\r\n%s\r\n", v.length(), v)
+                            String.format("$%d\r\n%s\r\n", v.data.length(), v.data)
                                 .getBytes());
                     } else {
                         socket.getOutputStream().write("-1\r\n".getBytes());

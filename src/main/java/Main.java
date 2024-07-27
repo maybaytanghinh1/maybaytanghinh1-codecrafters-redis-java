@@ -4,12 +4,27 @@ import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
+    public static class Value {
+        String data;
+        long expiryTime;
+
+        Value(String data, long expiryTime) {
+          this.data = data;
+          this.expiryTime = expiryTime;
+        }
+
+        boolean isExpired() {
+          return expiryTime > 0 && System.currentTimeMillis() > expiryTime;
+        }
+    }
+    
     private static final int PORT = 6379; // Port number for the server
-    private static ConcurrentHashMap<String, String> m = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, Value> m = new ConcurrentHashMap<>();
+    // New for ConcurrentHashMap 
+
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
-
             while (true) {
                 Socket socket = serverSocket.accept(); // Accept client connections
                 System.out.println("Client connected: " + socket.getInetAddress());
