@@ -57,6 +57,7 @@ public class ClientHandler implements Runnable {
                     String key = input.readLine();
                     input.readLine(); 
                     String value = input.readLine(); 
+                    input.readLine(); 
                     // This readLine does ntow ork becaues, it is not null, it does not have any input any
                     if (numberOfCommands > 3) {
                         // Put the expery date in this, and this will be fine. 
@@ -64,9 +65,7 @@ public class ClientHandler implements Runnable {
                         if ("px".equalsIgnoreCase(cmd)) {
                             input.readLine();   
                             String expiry = input.readLine();  
-                            System.out.println(Long.parseLong(expiry));
                             long expiryTime = System.currentTimeMillis() + Long.parseLong(expiry);
-                            System.out.println(expiryTime);
                             m.put(key, new Main.Value(value, expiryTime)); 
                         }  
                     } else {
