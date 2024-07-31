@@ -129,7 +129,7 @@ public class Main {
             }
         } else if (cmd.equalsIgnoreCase("INFO")) {
             if (master_port == -1) {
-                response = bulkString("role:master");
+                response = bulkString("role:master, master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb, master_repl_offset=0");
             } else {
                 response = bulkString("role:slave, master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb, master_repl_offset=0");
             }
