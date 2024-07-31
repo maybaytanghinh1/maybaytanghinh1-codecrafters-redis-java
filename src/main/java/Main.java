@@ -32,10 +32,22 @@ public class Main {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
         System.out.println("Logs from your program will appear here!");
         int port = 6379;
+        String master_host = null; 
+        int master_port = -1;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--port") && i + 1 < args.length) {
                 port = Integer.parseInt(args[i + 1]);
                 i++; // Skip the next argument as it's the port number
+            } else if (args[i].equals("--replicaof") && i + 1 < args.length) {
+                // The --replicaof argument should be in quotes
+                String replicaInfo = args[i + 1];
+                // Split the string to extract host and port
+                String[] parts = replicaInfo.split(" ");
+                if (parts.length == 2) {
+                    master_host = parts[0];
+                    master_port = Integer.parseInt(parts[1]);
+                }
+                i++; // Skip the next argument as it's the replica info
             }
         }
         Selector selector = Selector.open();
@@ -66,7 +78,7 @@ public class Main {
                         System.out.println("command: " + charBuffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
-                        processCommand(parsedCommand, buffer);
+                        processCommand(parsedCommand, buffer, master_port);
                         buffer.flip();
                         client.write(buffer);
                     }
@@ -88,7 +100,7 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         if (cmd.equalsIgnoreCase("PING")) {
@@ -116,7 +128,12 @@ public class Main {
                 response = "$-1\r\n";
             }
         } else if (cmd.equalsIgnoreCase("INFO")) {
-            response = bulkString("role:master");
+            if (master_port == -1) {
+                response = bulkString("role:master");
+            } else {
+                response = bulkString("role:slave");
+            }
+            
         }
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
