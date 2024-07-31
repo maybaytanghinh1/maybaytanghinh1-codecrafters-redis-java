@@ -81,6 +81,13 @@ public class Main {
         }
     }
 
+    static String bulkString(String str) {
+        if (str == null) {
+            return "$-1\r\n";
+        }
+        return "$" + str.length() + "\r\n" + str + "\r\n";
+    }
+
     static void processCommand(List<String> parsedCommand, ByteBuffer buffer) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
@@ -108,7 +115,10 @@ public class Main {
             } else { // nil
                 response = "$-1\r\n";
             }
+        } else if (cmd.equalsIgnoreCase("INFO")) {
+            response = bulkString("role:master");
         }
+
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
     }
 
