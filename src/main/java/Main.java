@@ -128,12 +128,16 @@ public class Main {
                 response = "$-1\r\n";
             }
         } else if (cmd.equalsIgnoreCase("INFO")) {
+            String role = "slave";
             if (master_port == -1) {
-                response = bulkString("role:master\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset=0");
-            } else {
-                response = bulkString("role:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset=0");
-            }
-            
+                role = "master"; 
+            } 
+            StringBuilder sb = new StringBuilder();
+            sb.append("role:").append(role).append("\n");
+            sb.append("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\n");
+            sb.append("master_repl_offset:0");
+            response = sb.toString();
+                                    
         }
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
