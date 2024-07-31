@@ -1,41 +1,171 @@
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ConcurrentHashMap;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Main {
-    public static class Value {
-        String data;
-        long expiryTime;
-
-        Value(String data, long expiryTime) {
-          this.data = data;
-          this.expiryTime = expiryTime;
+    static class ExpiryAndValue {
+        final long expiryTimestamp; // in ms
+        final String value;
+        ExpiryAndValue(String value) {
+            this.expiryTimestamp = Long.MAX_VALUE;
+            this.value = value;
         }
-
-        boolean isExpired() {
-          return expiryTime > 0 && System.currentTimeMillis() > expiryTime;
+        ExpiryAndValue(long expiryTimestamp, String value) {
+            this.expiryTimestamp = expiryTimestamp;
+            this.value = value;
         }
     }
-    
-    private static final int PORT = 6379; // Port number for the server
-    public static ConcurrentHashMap<String, Value> m = new ConcurrentHashMap<>();
-    // New for ConcurrentHashMap 
-
-    public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server is listening on port " + PORT);
+    static Map<String, ExpiryAndValue> cache = new HashMap<>();
+    public static void main(String[] args) throws IOException {
+        // You can use print statements as follows for debugging, they'll be visible when running tests.
+        System.out.println("Logs from your program will appear here!");
+        int port = 6379;
+        Selector selector = Selector.open();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        try (ServerSocketChannel serverSocket = ServerSocketChannel.open()) {
+            serverSocket.bind(new InetSocketAddress("localhost", port));
+            serverSocket.configureBlocking(false);
+            serverSocket.register(selector, SelectionKey.OP_ACCEPT);
+            // Wait for connection from client.
             while (true) {
-                Socket socket = serverSocket.accept(); // Accept client connections
-                System.out.println("Client connected: " + socket.getInetAddress());
-
-                // Create a new ClientHandler for each client connection
-                ClientHandler clientHandler = new ClientHandler(socket, m);
-                // Start a new thread to handle the client
-                new Thread(clientHandler).start();
+                selector.select();
+                Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                for (SelectionKey key : selectedKeys) {
+                    if (key.isAcceptable()) {
+                        SocketChannel client = serverSocket.accept();
+                        client.configureBlocking(false);
+                        client.register(selector, SelectionKey.OP_READ);
+                    }
+                    if (key.isReadable()) {
+                        buffer.clear();
+                        SocketChannel client = (SocketChannel) key.channel();
+                        int bytesRead = client.read(buffer);
+                        if (bytesRead == -1) { //end of stream
+                            continue;
+                        }
+                        buffer.flip();
+                        CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
+                        System.out.println("command: " + charBuffer);
+                        List<String> parsedCommand = parseCommand(charBuffer);
+                        buffer.clear();
+                        processCommand(parsedCommand, buffer);
+                        buffer.flip();
+                        client.write(buffer);
+                    }
+                }
+                selectedKeys.clear();
             }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            System.out.println("Done!");
+        }
+    }
+
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer) {
+        String cmd = parsedCommand.get(0);
+        String response = "+ERROR\n";
+        if (cmd.equalsIgnoreCase("PING")) {
+            response = "+PONG\r\n";
+        } else if (cmd.equalsIgnoreCase("ECHO")) {
+            response = "+" + parsedCommand.get(1) + "\r\n";
+        } else if (cmd.equalsIgnoreCase("SET")) {
+            cache.put(parsedCommand.get(1), new ExpiryAndValue(parsedCommand.get(2)));
+            ExpiryAndValue toStore;
+            if (parsedCommand.size() > 3 && parsedCommand.get(3).equalsIgnoreCase("PX")) {
+                int milis = Integer.parseInt(parsedCommand.get(4));
+                long expiryTimestamp = System.currentTimeMillis() + milis;
+                toStore = new ExpiryAndValue(expiryTimestamp, parsedCommand.get(2));
+            } else {
+                toStore = new ExpiryAndValue(parsedCommand.get(2));
+            }
+            cache.put(parsedCommand.get(1), toStore);
+            response = "+OK\r\n";
+        } else if (cmd.equalsIgnoreCase("GET")) {
+            ExpiryAndValue cached = cache.get(parsedCommand.get(1));
+            if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
+                String content = cached.value;
+                response = "$" + content.length() + "\r\n" + content + "\r\n";
+            } else { // nil
+                response = "$-1\r\n";
+            }
+        }
+        buffer.put(response.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static List<String> parseCommand(CharBuffer data) {
+        Tokenizer tokenizer = new Tokenizer(data);
+        tokenizer.chomp('*');
+        int arraySize = tokenizer.nextInt();
+        tokenizer.chomp('\r');
+        tokenizer.chomp('\n');
+        if (arraySize == 0) {
+            System.out.println("Empty array. Was that intended?");
+            return Collections.emptyList();
+        }
+        List<String> args = new ArrayList<>();
+        for (int i = 0; i < arraySize; i++) {
+            tokenizer.chomp('$');
+            int argLength = tokenizer.nextInt();
+            tokenizer.chomp('\r');
+            tokenizer.chomp('\n');
+            String arg = tokenizer.nextString(argLength);
+            tokenizer.chomp('\r');
+            tokenizer.chomp('\n');
+            args.add(arg);
+        }
+        System.out.println("args: " + args);
+        return args;
+    }
+    
+    static class Tokenizer {
+        final CharBuffer buf;
+        Tokenizer(CharBuffer buf) {this.buf = buf.asReadOnlyBuffer();}
+        boolean expect(char expected) {
+            return current() == expected;
+        }
+        void chomp(char expected) {
+            if (buf.get() != expected) {
+                throw new IllegalStateException(buf + "[" + (buf.position() - 1) + "] != " + expected);
+            }
+        }
+        char current() {
+            return buf.get(buf.position());
+        }
+        int nextInt() {
+            int start = buf.position();
+            char curr = buf.get();
+            StringBuilder sb = new StringBuilder();
+            while (curr >= '0' && curr <= '9') {
+                sb.append(curr);
+                curr = buf.get();
+            }
+            buf.position(buf.position() - 1);
+            if (buf.position() == start) {
+                throw new IllegalStateException(buf + "[" + start + "] is not an int");
+            }
+            return Integer.parseInt(sb.toString());
+        }
+        String nextString(int len) {
+            if (buf.remaining() < len) {
+                throw new IllegalStateException("out of bounds read");
+            }
+            char[] chars = new char[len];
+            buf.get(chars, 0, len);
+            return new String(chars);
         }
     }
 }
