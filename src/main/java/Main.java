@@ -32,6 +32,12 @@ public class Main {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
         System.out.println("Logs from your program will appear here!");
         int port = 6379;
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("--port") && i + 1 < args.length) {
+                port = Integer.parseInt(args[i + 1]);
+                i++; // Skip the next argument as it's the port number
+            }
+        }
         Selector selector = Selector.open();
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         try (ServerSocketChannel serverSocket = ServerSocketChannel.open()) {
@@ -130,7 +136,7 @@ public class Main {
         System.out.println("args: " + args);
         return args;
     }
-    
+
     static class Tokenizer {
         final CharBuffer buf;
         Tokenizer(CharBuffer buf) {this.buf = buf.asReadOnlyBuffer();}
