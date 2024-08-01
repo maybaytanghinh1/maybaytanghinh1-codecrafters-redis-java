@@ -1,5 +1,7 @@
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
@@ -46,6 +48,8 @@ public class Main {
                 if (parts.length == 2) {
                     master_host = parts[0];
                     master_port = Integer.parseInt(parts[1]);
+                    // Send a PING to the master_host and master_port
+                    sendPingToMaster(master_host, master_port);
                 }
                 i++; // Skip the next argument as it's the replica info
             }
@@ -203,6 +207,19 @@ public class Main {
             char[] chars = new char[len];
             buf.get(chars, 0, len);
             return new String(chars);
+        }
+    }
+
+    static void sendPingToMaster(String masterHost, int masterPort) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(masterHost, masterPort), 5000); // 5 second timeout
+            OutputStream out = socket.getOutputStream();
+            out.write("*1\r\n$4\r\nping\r\n".getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            System.out.println("PING sent to " + masterHost + ":" + masterPort);
+        } catch (IOException e) {
+            System.err.println("Failed to send PING to " + masterHost + ":" + masterPort);
+            e.printStackTrace();
         }
     }
 }
