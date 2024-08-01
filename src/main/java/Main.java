@@ -227,7 +227,7 @@ public class Main {
             System.err.println("Failed to send PING to " + masterHost + ":" + masterPort);
             e.printStackTrace();
         }
-    }  s
+    }
 
     static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
         try (Socket socket = new Socket()) {
