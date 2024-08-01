@@ -49,9 +49,9 @@ public class Main {
                     master_host = parts[0];
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
-                    Socket masterSocket = new Socket(master_host, master_port);
 
                     sendPingToMaster(master_host, master_port);
+                    Socket masterSocket = new Socket(master_host, master_port);
                     // Read from the input of the master
                     masterSocket.getInputStream().read();
                     // sendREPLCONFToMaster(master_host, master_port);  
