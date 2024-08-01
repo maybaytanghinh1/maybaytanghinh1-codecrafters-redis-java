@@ -50,18 +50,18 @@ public class Main {
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
-                        // Send a PING to the masterHost and masterPort using the same socket
-                        sendPingToMaster(masterSocket);
-
-                        // Read from the input of the master (if needed)
-                        masterSocket.getInputStream().read();
-                        // You can add more logic here if needed, such as sending REPLCONF
-
                         OutputStream out = masterSocket.getOutputStream();
+
+                        // Send a PING to the masterHost and masterPort using the same socket
+                        out.write("*1\r\n$4\r\nping\r\n".getBytes(StandardCharsets.UTF_8));
+                        out.flush();
+
+                        masterSocket.getInputStream().read();
                         String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
                                             String.valueOf(port).length(), port);
                         out.write(replconf.getBytes(StandardCharsets.UTF_8));
                         out.flush();
+
                         masterSocket.getInputStream().read();
                         out.write("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".getBytes(StandardCharsets.UTF_8));
                         out.flush();
@@ -229,37 +229,6 @@ public class Main {
             char[] chars = new char[len];
             buf.get(chars, 0, len);
             return new String(chars);
-        }
-    }
-
-    static void sendPingToMaster(Socket socket) {
-        try {
-            OutputStream out = socket.getOutputStream();
-            out.write("*1\r\n$4\r\nping\r\n".getBytes(StandardCharsets.UTF_8));
-            out.flush();
-            System.out.println("PING sent to " + socket.getRemoteSocketAddress());
-        } catch (IOException e) {
-            System.err.println("Failed to send PING to " + socket.getRemoteSocketAddress());
-            e.printStackTrace();
-        }
-    }
-
-    static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(masterHost, masterPort), 5000); // 5 second timeout
-            OutputStream out = socket.getOutputStream();
-
-            // Use String.format to insert the masterPort value
-            String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
-                                            String.valueOf(masterPort).length(), masterPort);
-            out.write(replconf.getBytes(StandardCharsets.UTF_8));
-            // String replconf2 = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
-            // out.write(replconf2.getBytes(StandardCharsets.UTF_8));
-            out.flush();
-            System.out.println("REPLCONF sent to " + masterHost + ":" + masterPort);
-        } catch (IOException e) {
-            System.err.println("Failed to send REPLCONF to " + masterHost + ":" + masterPort);
-            e.printStackTrace();
         }
     }
 }
