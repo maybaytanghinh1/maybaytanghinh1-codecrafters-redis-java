@@ -50,8 +50,6 @@ public class Main {
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
                     sendPingToMaster(master_host, master_port);
-                    // Send Handshake2 
-                    sendREPLCONFToMaster(master_host, master_port); 
                 }
                 i++; // Skip the next argument as it's the replica info
             }
@@ -84,7 +82,7 @@ public class Main {
                         System.out.println("command: " + charBuffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
-                        processCommand(parsedCommand, buffer, master_port);
+                        processCommand(parsedCommand, buffer, master_port, master_host);
                         buffer.flip();
                         client.write(buffer);
                     }
@@ -106,7 +104,7 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         if (cmd.equalsIgnoreCase("PING")) {
@@ -144,6 +142,8 @@ public class Main {
             sb.append("master_repl_offset:0");
             response = bulkString(sb.toString());
                                     
+        } else if (cmd.equalsIgnoreCase("PONG")) {
+            sendREPLCONFToMaster(master_host, master_port);
         }
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
