@@ -49,7 +49,7 @@ public class Main {
                     master_host = parts[0];
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
-                    Socket masterSocket = new Socket(master_host, master_port);
+                    // Socket masterSocket = new Socket(master_host, master_port);
 
                     sendPingToMaster(master_host, master_port);
                     // Read from the input of the master
@@ -227,7 +227,7 @@ public class Main {
             System.err.println("Failed to send PING to " + masterHost + ":" + masterPort);
             e.printStackTrace();
         }
-    }  
+    }  s
 
     static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
         try (Socket socket = new Socket()) {
@@ -235,7 +235,6 @@ public class Main {
             OutputStream out = socket.getOutputStream();
 
             // Use String.format to insert the masterPort value
-            // TODO this could be make the coder better by using bulk string. I could rewrite it. 
             String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
                                             String.valueOf(masterPort).length(), masterPort);
             out.write(replconf.getBytes(StandardCharsets.UTF_8));
