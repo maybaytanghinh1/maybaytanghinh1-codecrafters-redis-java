@@ -54,7 +54,7 @@ public class Main {
                     sendPingToMaster(master_host, master_port);
                     // Read from the input of the master
                     masterSocket.getInputStream().read();
-                    sendREPLCONFToMaster(master_host, master_port);  
+                    // sendREPLCONFToMaster(master_host, master_port);  
                     
                 }
                 i++; // Skip the next argument as it's the replica info
