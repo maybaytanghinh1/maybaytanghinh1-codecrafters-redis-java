@@ -50,6 +50,8 @@ public class Main {
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
                     sendPingToMaster(master_host, master_port);
+                    // Send Handshake2 
+                    sendREPLCONFToMaster(master_host, master_port); 
                 }
                 i++; // Skip the next argument as it's the replica info
             }
@@ -221,5 +223,25 @@ public class Main {
             System.err.println("Failed to send PING to " + masterHost + ":" + masterPort);
             e.printStackTrace();
         }
+    }  
+
+    static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(masterHost, masterPort), 5000); // 5 second timeout
+            OutputStream out = socket.getOutputStream();
+
+            // Use String.format to insert the masterPort value
+            // TODO this could be make the coder better by using bulk string. I could rewrite it. 
+            String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
+                                            String.valueOf(masterPort).length(), masterPort);
+            
+            out.write(replconf.getBytes(StandardCharsets.UTF_8));
+            String replconf2 = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+            out.write(replconf2.getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            System.out.println("REPLCONF sent to " + masterHost + ":" + masterPort);
+        } catch (IOException e) {
+            System.err.println("Failed to send REPLCONF to " + masterHost + ":" + masterPort);
+            e.printStackTrace();
+        }
     }
-}
