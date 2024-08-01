@@ -59,9 +59,13 @@ public class Main {
 
                         OutputStream out = masterSocket.getOutputStream();
                         String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
-                                            String.valueOf(master_port).length(), master_port);
+                                            String.valueOf(port).length(), port);
                         out.write(replconf.getBytes(StandardCharsets.UTF_8));
                         out.flush();
+                        masterSocket.getInputStream().read();
+                        out.write("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".getBytes(StandardCharsets.UTF_8));
+                        out.flush();
+
 
                     } catch (IOException e) {
                         System.err.println("Failed to connect to the master at " + master_host + ":" + master_port);
