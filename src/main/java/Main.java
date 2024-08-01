@@ -1,5 +1,5 @@
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -50,21 +50,19 @@ public class Main {
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
-                        OutputStream out = masterSocket.getOutputStream();
+                        PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
 
                         // Send a PING to the masterHost and masterPort using the same socket
-                        out.write("*1\r\n$4\r\nping\r\n".getBytes(StandardCharsets.UTF_8));
+                        out.print("*1\r\n$4\r\nping\r\n");
+                        out.flush();
+                        masterSocket.getInputStream().read();
+                        out.print(
+                            "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n");
+                        out.flush();
+                        masterSocket.getInputStream().read();
+                        out.print("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n");
                         out.flush();
 
-                        masterSocket.getInputStream().read();
-                        String replconf = String.format("*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$%d\r\n%d\r\n", 
-                                            String.valueOf(port).length(), port);
-                        out.write(replconf.getBytes(StandardCharsets.UTF_8));
-                        out.flush();
-
-                        masterSocket.getInputStream().read();
-                        out.write("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n".getBytes(StandardCharsets.UTF_8));
-                        out.flush();
 
 
                     } catch (IOException e) {
