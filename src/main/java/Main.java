@@ -225,6 +225,7 @@ public class Main {
     }  
 
     static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
+        Thread.sleep(2000);
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(masterHost, masterPort), 5000); // 5 second timeout
             OutputStream out = socket.getOutputStream();
@@ -235,8 +236,8 @@ public class Main {
                                             String.valueOf(masterPort).length(), masterPort);
             
             out.write(replconf.getBytes(StandardCharsets.UTF_8));
-            String replconf2 = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
-            out.write(replconf2.getBytes(StandardCharsets.UTF_8));
+            // String replconf2 = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+            // out.write(replconf2.getBytes(StandardCharsets.UTF_8));
             out.flush();
             System.out.println("REPLCONF sent to " + masterHost + ":" + masterPort);
         } catch (IOException e) {
