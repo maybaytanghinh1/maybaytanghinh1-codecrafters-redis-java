@@ -50,6 +50,7 @@ public class Main {
                     master_port = Integer.parseInt(parts[1]);
                     // Send a PING to the master_host and master_port
                     sendPingToMaster(master_host, master_port);
+                    sendREPLCONFToMaster(master_host, master_port);  
                 }
                 i++; // Skip the next argument as it's the replica info
             }
@@ -142,9 +143,7 @@ public class Main {
             sb.append("master_repl_offset:0");
             response = bulkString(sb.toString());
                                     
-        } else if (cmd.equalsIgnoreCase("PONG")) {
-            sendREPLCONFToMaster(master_host, master_port);
-        }
+        } 
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
     }
