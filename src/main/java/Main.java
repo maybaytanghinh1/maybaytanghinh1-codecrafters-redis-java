@@ -53,7 +53,7 @@ public class Main {
 
                     sendPingToMaster(master_host, master_port);
                     // Read from the input of the master
-                    masterSocket.getInputStream().read();
+                    // masterSocket.getInputStream().read();
                     // sendREPLCONFToMaster(master_host, master_port);  
                     
                 }
