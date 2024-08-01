@@ -225,7 +225,12 @@ public class Main {
     }  
 
     static void sendREPLCONFToMaster(String masterHost, int masterPort) { 
-        Thread.sleep(2000);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(masterHost, masterPort), 5000); // 5 second timeout
             OutputStream out = socket.getOutputStream();
