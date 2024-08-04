@@ -53,25 +53,38 @@ public class Main {
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
                         PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
 
                         // Send a PING to the masterHost and masterPort using the same socket
                         out.print("*1\r\n$4\r\nping\r\n");
-                        // out.flush();
-                        // masterSocket.getInputStream().read();
+                        out.flush();
+                        String response = in.readLine();
+                        if (!response.equals("+PONG")) {
+                            throw new IOException("Did not receive PONG from master");
+                        }
 
                         out.print(
-                            "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n");
-                        // out.flush();
-                        // masterSocket.getInputStream().read();
+                            "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n" + port + "\r\n");
+                        out.flush();
+                        response = in.readLine();
+                        if (!response.equals("+OK")) {
+                            throw new IOException("Did not receive OK from master after REPLCONF listening-port");
+                        }
 
                         out.print("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n");
-                        // out.flush();
-                        // masterSocket.getInputStream().read();
+                        out.flush();
+                        response = in.readLine();
+                        if (!response.equals("+OK")) {
+                            throw new IOException("Did not receive OK from master after REPLCONF capa psync2");
+                        }
                         
-                        // TODO I want to check if the master already sent an Ok message before sending the PSYNC
-                        // The master is to read if the master have read the response. 
+                        // Send PSYNC command
                         out.print("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"); 
-                        // out.flush(); 
+                        out.flush();
+                        response = in.readLine();
+                        if (!response.startsWith("+OK")) {
+                            throw new IOException("Did not receive OK from master after PSYNC");
+                        }
                     } catch (IOException e) {
                         System.err.println("Failed to connect to the master at " + master_host + ":" + master_port);
                         e.printStackTrace();
