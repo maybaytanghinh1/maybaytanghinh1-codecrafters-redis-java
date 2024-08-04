@@ -56,20 +56,22 @@ public class Main {
 
                         // Send a PING to the masterHost and masterPort using the same socket
                         out.print("*1\r\n$4\r\nping\r\n");
-                        out.flush();
-                        masterSocket.getInputStream().read();
+                        // out.flush();
+                        // masterSocket.getInputStream().read();
 
                         out.print(
                             "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n");
-                        out.flush();
-                        masterSocket.getInputStream().read();
+                        // out.flush();
+                        // masterSocket.getInputStream().read();
 
                         out.print("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n");
-                        out.flush();
-                        masterSocket.getInputStream().read();
-                                                // The master is to read if the master have read the response. 
+                        // out.flush();
+                        // masterSocket.getInputStream().read();
+                        
+                        // TODO I want to check if the master already sent an Ok message before sending the PSYNC
+                        // The master is to read if the master have read the response. 
                         out.print("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"); 
-                        out.flush(); 
+                        // out.flush(); 
                     } catch (IOException e) {
                         System.err.println("Failed to connect to the master at " + master_host + ":" + master_port);
                         e.printStackTrace();
