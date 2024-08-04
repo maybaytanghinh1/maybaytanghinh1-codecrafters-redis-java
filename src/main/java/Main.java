@@ -162,7 +162,9 @@ public class Main {
             sb.append("master_repl_offset:0");
             response = bulkString(sb.toString());
                                     
-        } 
+        } else if (cmd.equalsIgnoreCase("REPLCONF")) {
+            response = "+OK\r\n";
+        }
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
     }
