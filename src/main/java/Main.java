@@ -12,6 +12,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -147,6 +148,8 @@ public class Main {
     static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
+        Boolean isPsync = false;
+        
         if (cmd.equalsIgnoreCase("PING")) {
             response = "+PONG\r\n";
         } else if (cmd.equalsIgnoreCase("ECHO")) {
@@ -185,10 +188,30 @@ public class Main {
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
+            // Assume that this is always -1 
+            // I hardcoded the string here. 
             response = "+FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0\r\n";
+            isPsync = true; 
+            // I want to send an empty RDB file in binary.  
         }
 
+        
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
+
+        String emptyRDB = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
+        StringBuilder binaryRepresentation = new StringBuilder();
+        byte[] decodedBytes = Base64.getDecoder().decode(emptyRDB);
+        for (byte b : decodedBytes) {
+            binaryRepresentation.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+        
+        // Print the binary representation
+        binaryRepresentation.toString();
+        String outputString = "$" + binaryRepresentation.length() + "\r\n" + binaryRepresentation.toString();
+
+        if (isPsync) {
+            buffer.put(outputString.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     static List<String> parseCommand(CharBuffer data) {
