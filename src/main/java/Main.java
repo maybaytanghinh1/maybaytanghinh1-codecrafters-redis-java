@@ -199,18 +199,12 @@ public class Main {
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
 
         String emptyRDB = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
-        StringBuilder binaryRepresentation = new StringBuilder();
-        byte[] decodedBytes = Base64.getDecoder().decode(emptyRDB);
-        for (byte b : decodedBytes) {
-            binaryRepresentation.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-        }
-        
-        // Print the binary representation
-        binaryRepresentation.toString();
-        String outputString = "$" + binaryRepresentation.length() + "\r\n" + binaryRepresentation.toString();
+        byte[] bytes = Base64.getDecoder().decode(emptyRDB);
+        String outputString = "$" + bytes.length + "\r\n";
 
         if (isPsync) {
             buffer.put(outputString.getBytes(StandardCharsets.UTF_8));
+            buffer.put(bytes);
         }
     }
 
