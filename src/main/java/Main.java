@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -51,7 +53,9 @@ public class Main {
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
                         PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
-
+                        BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
+                        String response = in.readLine();
+                        
                         // Send a PING to the masterHost and masterPort using the same socket
                         out.print("*1\r\n$4\r\nping\r\n");
                         out.flush();
@@ -65,6 +69,8 @@ public class Main {
                         out.print("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n");
                         out.flush();
                         masterSocket.getInputStream().read();
+                        
+                        response = in.readLine();
                         // The master is to read if the master have read the response. 
                         out.print("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"); 
                         out.flush(); 
