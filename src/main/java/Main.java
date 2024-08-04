@@ -65,10 +65,9 @@ public class Main {
                         out.print("*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n");
                         out.flush();
                         masterSocket.getInputStream().read();
-                        
+                        // The master is to read if the master have read the response. 
                         out.print("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"); 
                         out.flush(); 
-                        masterSocket.getInputStream().read();
                     } catch (IOException e) {
                         System.err.println("Failed to connect to the master at " + master_host + ":" + master_port);
                         e.printStackTrace();
