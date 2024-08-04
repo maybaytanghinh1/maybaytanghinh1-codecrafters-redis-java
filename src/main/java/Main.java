@@ -184,6 +184,8 @@ public class Main {
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
             response = "+OK\r\n";
+        } else if (cmd.equalsIgnoreCase("PSYNC")) {
+            response = "+FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0\r\n";
         }
 
         buffer.put(response.getBytes(StandardCharsets.UTF_8));
