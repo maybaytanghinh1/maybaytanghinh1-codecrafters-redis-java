@@ -209,7 +209,7 @@ public class Main {
             if (parsedCommand.get(1).equalsIgnoreCase("listening-port")) {
                 int port = Integer.parseInt(parsedCommand.get(2));
                 try {
-                    replicas.add(new Socket(master_host, port));
+                    replicas.add(new Socket("localhost", port));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
