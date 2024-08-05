@@ -148,11 +148,10 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) throws IOException {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
-        System.out.println(String.format("This is the length of the replicas %d", replicas.size()));
         if (cmd.equalsIgnoreCase("PING")) {
             response = "+PONG\r\n";
         } else if (cmd.equalsIgnoreCase("ECHO")) {
@@ -169,8 +168,15 @@ public class Main {
             }
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
-
             // Pass the comamnds 
+            String command = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
+
+            for (SocketChannel replica : replicas) {
+                buffer.clear();
+                buffer.put(command.getBytes());  // Put the command into the buffer
+                buffer.flip();  // Prepare buffer for writing
+                replica.write(buffer);  // Write buffer to the replica
+            }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
