@@ -174,12 +174,11 @@ public class Main {
             parsedCommand.get(2)
             );
 
-            
-
+        
             for (SocketChannel replica : replicas) {
                 ByteBuffer new_buffer = ByteBuffer.allocate(1024);
                 new_buffer.clear();
-                new_buffer.put(command.getBytes());  // Put the command into the buffer
+                new_buffer.put(command.getBytes(StandardCharsets.UTF_8));  // Put the command into the buffer
                 new_buffer.flip();  // Prepare buffer for writing
                 try {
                     replica.write(new_buffer);
