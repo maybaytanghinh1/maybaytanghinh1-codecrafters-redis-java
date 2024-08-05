@@ -32,6 +32,7 @@ public class Main {
             this.value = value;
         }
     }
+    static List<Socket> replicas = new ArrayList<>();
     static Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -51,8 +52,11 @@ public class Main {
                 if (parts.length == 2) {
                     master_host = parts[0];
                     master_port = Integer.parseInt(parts[1]);
+
+                    // This one start the handshake. 
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
+                        replicas.add(masterSocket);
                         PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
                         BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
 
@@ -164,6 +168,20 @@ public class Main {
             } else {
                 toStore = new ExpiryAndValue(parsedCommand.get(2));
             }
+            // Pass the comamnds 
+            for (Socket socket:replicas) {
+                // I want to put in the socket
+                try {
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                    String formattedString = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", 
+                                                    parsedCommand.get(1), 
+                                                    parsedCommand.get(2));
+            out.print(formattedString);
+                    
+                } catch (IOException e) {
+                    e.printStackTrace(); // Handle the exception (print stack trace, log the error, etc.)
+                }
+            }
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("GET")) {
@@ -201,7 +219,8 @@ public class Main {
         String emptyRDB = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
         byte[] bytes = Base64.getDecoder().decode(emptyRDB);
         String outputString = "$" + bytes.length + "\r\n";
-
+        
+        //I do not understand fully about the bytes shit yet. So when it sent, it should send by the bytes? 
         if (isPsync) {
             buffer.put(outputString.getBytes(StandardCharsets.UTF_8));
             buffer.put(bytes);
