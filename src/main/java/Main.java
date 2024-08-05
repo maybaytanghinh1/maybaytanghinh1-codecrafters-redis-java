@@ -115,11 +115,6 @@ public class Main {
                         SocketChannel client = serverSocket.accept();
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
-                        if (isMaster) {
-                            System.out.println("Only Master adds the replicas");
-                            System.out.println(port);
-                            replicas.add(client);
-                        }
                     }
                     if (key.isReadable()) {
                         buffer.clear();
@@ -135,6 +130,11 @@ public class Main {
                         processCommand(parsedCommand, buffer, master_port, master_host,isMaster);
                         buffer.flip();
                         client.write(buffer);
+                        if (isMaster) {
+                            System.out.println("Only Master adds the replicas");
+                            System.out.println(port);
+                            replicas.add(client);
+                        }
                     }
                 }
                 selectedKeys.clear();
