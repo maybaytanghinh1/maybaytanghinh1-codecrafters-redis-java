@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +32,7 @@ public class Main {
             this.value = value;
         }
     }
-    static final Set<SocketChannel> replicas = new HashSet<>();
+    static final List<SocketChannel> replicas = new ArrayList<>();
     static Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -149,7 +148,7 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) throws IOException {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
@@ -171,13 +170,24 @@ public class Main {
             response = "+OK\r\n";
 
             // Pass the comamnds 
-            String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
+            String command = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
+            parsedCommand.get(2)
+            );
+
+            ByteBuffer new_buffer = ByteBuffer.allocate(256);
 
             for (SocketChannel replica : replicas) {
                 buffer.clear();
-                buffer.put(command.getBytes());  // Put the command into the buffer
+                new_buffer.put(command.getBytes());  // Put the command into the buffer
                 buffer.flip();  // Prepare buffer for writing
-                replica.write(buffer);  // Write buffer to the replica
+                try {
+                    replica.write(buffer);
+                } catch (IOException e) {
+                    // Handle the exception here
+                    System.err.println("Error writing to replica: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                 // Write buffer to the replica
             }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
