@@ -117,6 +117,7 @@ public class Main {
                         client.register(selector, SelectionKey.OP_READ);
                         if (isMaster) {
                             System.out.println("Only Master adds the replicas");
+                            System.out.println(port);
                             replicas.add(client);
                         }
                     }
