@@ -205,6 +205,7 @@ public class Main {
             response = bulkString(sb.toString());
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
+            System.out.println("Hello I got here");
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
             // Assume that this is always -1 
