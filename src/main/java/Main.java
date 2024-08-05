@@ -207,13 +207,13 @@ public class Main {
             System.out.println("Hello I got here");
             System.out.println(parsedCommand.get(1));
             if (parsedCommand.get(1).equalsIgnoreCase("listening-port")) {
-                System.out.println("Get inside the listing to port");
                 int port = Integer.parseInt(parsedCommand.get(2));
                 try {
                     replicas.add(new Socket(master_host, port));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                System.out.println(String.format("Replica size %d", replicas.size()));
             }
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
