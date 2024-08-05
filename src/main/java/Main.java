@@ -184,7 +184,7 @@ public class Main {
                     e.printStackTrace(); // Handle the exception (print stack trace, log the error, etc.)
                 }
             }
-            System.out.print("Propagate messages");
+            System.out.println(String.format("Propagate messages to %d", replicas.size()));
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
