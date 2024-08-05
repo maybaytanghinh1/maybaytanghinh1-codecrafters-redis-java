@@ -116,7 +116,7 @@ public class Main {
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
                         if (isMaster) {
-                            System.out.println("OPnly Master adds the replicas");
+                            System.out.println("Only Master adds the replicas");
                             replicas.add(client);
                         }
                     }
@@ -180,6 +180,7 @@ public class Main {
             );
             System.out.println(isMaster); 
             if (isMaster) {
+                System.out.println(replicas.size());
                 for (SocketChannel replica : replicas) {
                     ByteBuffer new_buffer = ByteBuffer.allocate(1024);
                     new_buffer.clear();
