@@ -32,7 +32,7 @@ public class Main {
             this.value = value;
         }
     }
-    static List<Socket> replicas = new ArrayList<>();
+    static final List<SocketChannel> replicas = new ArrayList<>();
     static Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -113,6 +113,7 @@ public class Main {
                         SocketChannel client = serverSocket.accept();
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
+                        replicas.add(client);
                     }
                     if (key.isReadable()) {
                         buffer.clear();
@@ -125,11 +126,6 @@ public class Main {
                         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
-                        try {
-                            replicas.add(new Socket("localhost", port));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
                         processCommand(parsedCommand, buffer, master_port, master_host);
                         buffer.flip();
                         client.write(buffer);
@@ -156,7 +152,7 @@ public class Main {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
-        
+        System.out.println(String.format("This is the length of the replicas %d", replicas.size()));
         if (cmd.equalsIgnoreCase("PING")) {
             response = "+PONG\r\n";
         } else if (cmd.equalsIgnoreCase("ECHO")) {
@@ -175,20 +171,6 @@ public class Main {
             response = "+OK\r\n";
 
             // Pass the comamnds 
-            for (Socket socket:replicas) {
-                // I want to put in the socket
-                try {
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    String formattedString = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", 
-                                                    parsedCommand.get(1), 
-                                                    parsedCommand.get(2));
-                    out.print(formattedString);
-                    out.flush();
-                } catch (IOException e) {
-                    e.printStackTrace(); // Handle the exception (print stack trace, log the error, etc.)
-                }
-            }
-            System.out.println(String.format("Propagate messages to %d", replicas.size()));
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
@@ -209,17 +191,6 @@ public class Main {
             response = bulkString(sb.toString());
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
-            System.out.println("Hello I got here");
-            System.out.println(parsedCommand.get(1));
-            if (parsedCommand.get(1).equalsIgnoreCase("listening-port")) {
-                int port = Integer.parseInt(parsedCommand.get(2));
-                try {
-                    replicas.add(new Socket("localhost", port));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                System.out.println(String.format("Replica size %d", replicas.size()));
-            }
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
             // Assume that this is always -1 
