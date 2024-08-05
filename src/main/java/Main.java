@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,7 @@ public class Main {
             this.value = value;
         }
     }
-    static final List<SocketChannel> replicas = new ArrayList<>();
+    static final Set<SocketChannel> replicas = new HashSet<>();
     static Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -169,15 +170,15 @@ public class Main {
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
 
-            // // Pass the comamnds 
-            // String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
+            // Pass the comamnds 
+            String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
 
-            // for (SocketChannel replica : replicas) {
-            //     buffer.clear();
-            //     buffer.put(command.getBytes());  // Put the command into the buffer
-            //     buffer.flip();  // Prepare buffer for writing
-            //     replica.write(buffer);  // Write buffer to the replica
-            // }
+            for (SocketChannel replica : replicas) {
+                buffer.clear();
+                buffer.put(command.getBytes());  // Put the command into the buffer
+                buffer.flip();  // Prepare buffer for writing
+                replica.write(buffer);  // Write buffer to the replica
+            }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
