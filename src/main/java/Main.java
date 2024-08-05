@@ -179,9 +179,9 @@ public class Main {
             for (SocketChannel replica : replicas) {
                 buffer.clear();
                 new_buffer.put(command.getBytes());  // Put the command into the buffer
-                buffer.flip();  // Prepare buffer for writing
+                new_buffer.flip();  // Prepare buffer for writing
                 try {
-                    replica.write(buffer);
+                    replica.write(new_buffer);
                 } catch (IOException e) {
                     // Handle the exception here
                     System.err.println("Error writing to replica: " + e.getMessage());
