@@ -125,6 +125,11 @@ public class Main {
                         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
+                        try {
+                            replicas.add(new Socket("localhost", port));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         processCommand(parsedCommand, buffer, master_port, master_host);
                         buffer.flip();
                         client.write(buffer);
