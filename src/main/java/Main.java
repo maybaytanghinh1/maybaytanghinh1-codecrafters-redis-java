@@ -205,7 +205,9 @@ public class Main {
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
             System.out.println("Hello I got here");
+            System.out.println(parsedCommand.get(1));
             if (parsedCommand.get(1) == "listening-port") {
+                System.out.println("Get inside the listing to port");
                 int port = Integer.parseInt(parsedCommand.get(2));
                 try {
                     replicas.add(new Socket(master_host, port));
