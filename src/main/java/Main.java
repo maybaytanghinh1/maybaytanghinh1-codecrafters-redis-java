@@ -40,11 +40,13 @@ public class Main {
         int port = 6379;
         String master_host = null; 
         int master_port = -1;
+        boolean isMaster = true; 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--port") && i + 1 < args.length) {
                 port = Integer.parseInt(args[i + 1]);
                 i++; // Skip the next argument as it's the port number
             } else if (args[i].equals("--replicaof") && i + 1 < args.length) {
+                isMaster = false;
                 // The --replicaof argument should be in quotes
                 String replicaInfo = args[i + 1];
                 // Split the string to extract host and port
@@ -126,7 +128,7 @@ public class Main {
                         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
-                        processCommand(parsedCommand, buffer, master_port, master_host);
+                        processCommand(parsedCommand, buffer, master_port, master_host,isMaster);
                         buffer.flip();
                         client.write(buffer);
                     }
@@ -148,7 +150,7 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
@@ -173,9 +175,8 @@ public class Main {
             String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
             parsedCommand.get(2)
             );
-            System.out.println(master_host); 
-            System.out.println(master_port);
-            if (master_host != null) {
+            System.out.println(isMaster); 
+            if (isMaster) {
                 for (SocketChannel replica : replicas) {
                     ByteBuffer new_buffer = ByteBuffer.allocate(1024);
                     new_buffer.clear();
