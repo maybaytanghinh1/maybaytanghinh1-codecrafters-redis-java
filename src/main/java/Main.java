@@ -169,15 +169,15 @@ public class Main {
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
 
-            // Pass the comamnds 
-            String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
+            // // Pass the comamnds 
+            // String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
 
-            for (SocketChannel replica : replicas) {
-                buffer.clear();
-                buffer.put(command.getBytes());  // Put the command into the buffer
-                buffer.flip();  // Prepare buffer for writing
-                replica.write(buffer);  // Write buffer to the replica
-            }
+            // for (SocketChannel replica : replicas) {
+            //     buffer.clear();
+            //     buffer.put(command.getBytes());  // Put the command into the buffer
+            //     buffer.flip();  // Prepare buffer for writing
+            //     replica.write(buffer);  // Write buffer to the replica
+            // }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
