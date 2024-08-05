@@ -115,7 +115,10 @@ public class Main {
                         SocketChannel client = serverSocket.accept();
                         client.configureBlocking(false);
                         client.register(selector, SelectionKey.OP_READ);
-                        replicas.add(client);
+                        if (isMaster) {
+                            System.out.println("OPnly Master adds the replicas");
+                            replicas.add(client);
+                        }
                     }
                     if (key.isReadable()) {
                         buffer.clear();
