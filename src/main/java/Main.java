@@ -206,6 +206,8 @@ public class Main {
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
             System.out.println("Hello I got here");
+            System.out.println(parsedCommand.get(1));
+            System.out.println(parsedCommand.get(2));
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
             // Assume that this is always -1 
