@@ -124,7 +124,6 @@ public class Main {
                         }
                         buffer.flip();
                         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
-                        System.out.println("command: " + charBuffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
                         processCommand(parsedCommand, buffer, master_port, master_host);
@@ -168,6 +167,9 @@ public class Main {
             } else {
                 toStore = new ExpiryAndValue(parsedCommand.get(2));
             }
+            cache.put(parsedCommand.get(1), toStore);
+            response = "+OK\r\n";
+
             // Pass the comamnds 
             for (Socket socket:replicas) {
                 // I want to put in the socket
@@ -176,14 +178,13 @@ public class Main {
                     String formattedString = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", 
                                                     parsedCommand.get(1), 
                                                     parsedCommand.get(2));
-            out.print(formattedString);
-                    
+                    out.print(formattedString);
+                    out.flush();
                 } catch (IOException e) {
                     e.printStackTrace(); // Handle the exception (print stack trace, log the error, etc.)
                 }
             }
-            cache.put(parsedCommand.get(1), toStore);
-            response = "+OK\r\n";
+            System.out.print("Propagate messages");
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
@@ -248,7 +249,7 @@ public class Main {
             tokenizer.chomp('\n');
             args.add(arg);
         }
-        System.out.println("args: " + args);
+        // System.out.println("args: " + args);
         return args;
     }
 
