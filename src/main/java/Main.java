@@ -173,7 +173,8 @@ public class Main {
             String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
             parsedCommand.get(2)
             );
-
+            System.out.println(master_host); 
+            System.out.println(master_port);
             if (master_host != null) {
                 for (SocketChannel replica : replicas) {
                     ByteBuffer new_buffer = ByteBuffer.allocate(1024);
