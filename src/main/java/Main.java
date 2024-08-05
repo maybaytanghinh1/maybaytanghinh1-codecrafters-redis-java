@@ -176,27 +176,27 @@ public class Main {
             response = "+OK\r\n";
 
             // Pass the comamnds 
-            String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
-            parsedCommand.get(2)
-            );
-            System.out.println(isMaster); 
-            if (isMaster) {
-                System.out.println(replicas.size());
-                for (SocketChannel replica : replicas) {
-                    ByteBuffer new_buffer = ByteBuffer.allocate(1024);
-                    new_buffer.clear();
-                    new_buffer.put(command.getBytes(StandardCharsets.UTF_8));  // Put the command into the buffer
-                    new_buffer.flip();  // Prepare buffer for writing
-                    try {
-                        replica.write(new_buffer);
-                    } catch (IOException e) {
-                        // Handle the exception here
-                        System.err.println("Error writing to replica: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                     // Write buffer to the replica
-                }
-            }
+            // String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
+            // parsedCommand.get(2)
+            // );
+            // System.out.println(isMaster); 
+            // if (isMaster) {
+            //     System.out.println(replicas.size());
+            //     for (SocketChannel replica : replicas) {
+            //         ByteBuffer new_buffer = ByteBuffer.allocate(1024);
+            //         new_buffer.clear();
+            //         new_buffer.put(command.getBytes(StandardCharsets.UTF_8));  // Put the command into the buffer
+            //         new_buffer.flip();  // Prepare buffer for writing
+            //         try {
+            //             replica.write(new_buffer);
+            //         } catch (IOException e) {
+            //             // Handle the exception here
+            //             System.err.println("Error writing to replica: " + e.getMessage());
+            //             e.printStackTrace();
+            //         }
+            //          // Write buffer to the replica
+            //     }
+            // }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
             if (cached != null && cached.expiryTimestamp >= System.currentTimeMillis()) {
