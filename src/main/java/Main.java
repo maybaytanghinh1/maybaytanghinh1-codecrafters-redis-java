@@ -174,7 +174,7 @@ public class Main {
             parsedCommand.get(2)
             );
 
-            ByteBuffer new_buffer = ByteBuffer.allocate(256);
+            ByteBuffer new_buffer = ByteBuffer.allocate(1024);
 
             for (SocketChannel replica : replicas) {
                 buffer.clear();
