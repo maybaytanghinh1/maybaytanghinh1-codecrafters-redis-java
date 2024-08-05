@@ -56,7 +56,6 @@ public class Main {
                     // This one start the handshake. 
                     // Send a PING to the master_host and master_port
                     try (Socket masterSocket = new Socket(master_host, master_port)) {
-                        replicas.add(masterSocket);
                         PrintWriter out = new PrintWriter(masterSocket.getOutputStream(), true);
                         BufferedReader in = new BufferedReader(new InputStreamReader(masterSocket.getInputStream()));
 
@@ -206,8 +205,14 @@ public class Main {
                                     
         } else if (cmd.equalsIgnoreCase("REPLCONF")) {
             System.out.println("Hello I got here");
-            System.out.println(parsedCommand.get(1));
-            System.out.println(parsedCommand.get(2));
+            if (parsedCommand.get(1) == "listening-port") {
+                int port = Integer.parseInt(parsedCommand.get(2));
+                try {
+                    replicas.add(new Socket(master_host, port));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             response = "+OK\r\n";
         } else if (cmd.equalsIgnoreCase("PSYNC")) {
             // Assume that this is always -1 
