@@ -168,8 +168,9 @@ public class Main {
             }
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
+
             // Pass the comamnds 
-            String command = String.format("*3\r\n$3\r\nSET\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
+            String command = String.format("3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n", parsedCommand.get(1), parsedCommand.get(2));
 
             for (SocketChannel replica : replicas) {
                 buffer.clear();
