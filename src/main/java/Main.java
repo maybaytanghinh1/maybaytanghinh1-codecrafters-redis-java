@@ -50,6 +50,7 @@ public class Main {
                 // The --replicaof argument should be in quotes
                 String replicaInfo = args[i + 1];
                 // Split the string to extract host and port
+                
                 String[] parts = replicaInfo.split(" ");
                 if (parts.length == 2) {
                     master_host = parts[0];
