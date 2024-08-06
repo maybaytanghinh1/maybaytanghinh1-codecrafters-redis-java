@@ -128,12 +128,9 @@ public class Main {
                         CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
                         List<String> parsedCommand = parseCommand(charBuffer);
                         buffer.clear();
-                        processCommand(parsedCommand, buffer, master_port, master_host,isMaster);
+                        processCommand(parsedCommand, buffer, master_port, master_host, isMaster, client);
                         buffer.flip();
                         client.write(buffer);
-                        if (isMaster) {
-                            replicas.add(client);
-                        }
                     }
                 }
                 selectedKeys.clear();
@@ -153,11 +150,14 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster, SocketChannel client) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
         if (cmd.equalsIgnoreCase("PING")) {
+            if (isMaster) {
+                replicas.add(client);
+            }
             response = "+PONG\r\n";
         } else if (cmd.equalsIgnoreCase("ECHO")) {
             response = "+" + parsedCommand.get(1) + "\r\n";
@@ -176,8 +176,8 @@ public class Main {
 
             // Pass the comamnds 
             // The command is wrong because I also need the number
-            String command = String.format("*3\r\n$3\r\nSET\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",parsedCommand.get(1).length, parsedCommand.get(1),
-            parsedCommand.get(2).length, parsedCommand.get(2)
+            String command = String.format("*3\r\n$3\r\nSET\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",parsedCommand.get(1).length(), parsedCommand.get(1),
+            parsedCommand.get(2).length(), parsedCommand.get(2)
             );
             System.out.println(isMaster); 
             if (isMaster) {
