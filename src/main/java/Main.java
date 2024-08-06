@@ -33,7 +33,7 @@ public class Main {
         }
     }
     static final List<SocketChannel> replicas = new ArrayList<>();
-    Map<String, ExpiryAndValue> cache = new HashMap<>();
+    static Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
         System.out.println("Logs from your program will appear here!");
@@ -44,6 +44,7 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--port") && i + 1 < args.length) {
                 port = Integer.parseInt(args[i + 1]);
+                System.out.println(port);
                 i++; // Skip the next argument as it's the port number
                 isMaster = true;
             } else if (args[i].equals("--replicaof") && i + 1 < args.length) {
@@ -89,9 +90,9 @@ public class Main {
                         out.print("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"); 
                         out.flush();
                         response = in.readLine();
-                        if (!response.startsWith("+OK")) {
-                            throw new IOException("Did not receive OK from master after PSYNC");
-                        }
+                        // if (!response.startsWith("+OK")) {
+                        //     throw new IOException("Did not receive OK from master after PSYNC");
+                        // }
                     } catch (IOException e) {
                         System.err.println("Failed to connect to the master at " + master_host + ":" + master_port);
                         e.printStackTrace();
@@ -99,6 +100,7 @@ public class Main {
                     
                 }
                 i++; // Skip the next argument as it's the replica info
+                System.out.println(master_port);
             }
         }
         Selector selector = Selector.open();
@@ -150,10 +152,11 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster, SocketChannel client) {
+    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster, SocketChannel client) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
+        Boolean isSETSlave = false;
         if (cmd.equalsIgnoreCase("PING")) {
             if (isMaster) {
                 replicas.add(client);
@@ -173,6 +176,7 @@ public class Main {
             }
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
+
 
             // Pass the comamnds 
             // The command is wrong because I also need the number
@@ -196,6 +200,8 @@ public class Main {
                     }
                      // Write buffer to the replica
                 }
+            } else {
+                isSETSlave = true; 
             }
         } else if (cmd.equalsIgnoreCase("GET")) {
             ExpiryAndValue cached = cache.get(parsedCommand.get(1));
@@ -226,14 +232,14 @@ public class Main {
             // I want to send an empty RDB file in binary.  
         }
 
-        
-        buffer.put(response.getBytes(StandardCharsets.UTF_8));
+        if (!isSETSlave) {
+            buffer.put(response.getBytes(StandardCharsets.UTF_8));
+        }
 
         String emptyRDB = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
         byte[] bytes = Base64.getDecoder().decode(emptyRDB);
         String outputString = "$" + bytes.length + "\r\n";
         
-        //I do not understand fully about the bytes shit yet. So when it sent, it should send by the bytes? 
         if (isPsync) {
             buffer.put(outputString.getBytes(StandardCharsets.UTF_8));
             buffer.put(bytes);
