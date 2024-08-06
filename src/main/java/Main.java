@@ -33,7 +33,7 @@ public class Main {
         }
     }
     static final List<SocketChannel> replicas = new ArrayList<>();
-    static Map<String, ExpiryAndValue> cache = new HashMap<>();
+    Map<String, ExpiryAndValue> cache = new HashMap<>();
     public static void main(String[] args) throws IOException {
         // You can use print statements as follows for debugging, they'll be visible when running tests.
         System.out.println("Logs from your program will appear here!");
@@ -150,7 +150,7 @@ public class Main {
         return "$" + str.length() + "\r\n" + str + "\r\n";
     }
 
-    static void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster, SocketChannel client) {
+    void processCommand(List<String> parsedCommand, ByteBuffer buffer, int master_port, String master_host, boolean isMaster, SocketChannel client) {
         String cmd = parsedCommand.get(0);
         String response = "+ERROR\n";
         Boolean isPsync = false;
