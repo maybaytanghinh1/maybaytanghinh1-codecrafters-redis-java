@@ -132,8 +132,6 @@ public class Main {
                         buffer.flip();
                         client.write(buffer);
                         if (isMaster) {
-                            System.out.println("Only Master adds the replicas");
-                            System.out.println(port);
                             replicas.add(client);
                         }
                     }
@@ -177,8 +175,9 @@ public class Main {
             response = "+OK\r\n";
 
             // Pass the comamnds 
-            String command = String.format("*3\r\n$3\r\nSET\r\n$3\r\n%s\r\n$3\r\n%s\r\n",parsedCommand.get(1),
-            parsedCommand.get(2)
+            // The command is wrong because I also need the number
+            String command = String.format("*3\r\n$3\r\nSET\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",parsedCommand.get(1).length, parsedCommand.get(1),
+            parsedCommand.get(2).length, parsedCommand.get(2)
             );
             System.out.println(isMaster); 
             if (isMaster) {
@@ -187,7 +186,7 @@ public class Main {
                     ByteBuffer new_buffer = ByteBuffer.allocate(1024);
                     new_buffer.clear();
                     new_buffer.put(command.getBytes(StandardCharsets.UTF_8));  // Put the command into the buffer
-                    new_buffer.flip();  // Prepare buffer for writing
+                    new_buffer.flip();  // Prepare buffer for W
                     try {
                         replica.write(new_buffer);
                     } catch (IOException e) {
