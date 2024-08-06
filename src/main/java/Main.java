@@ -176,7 +176,7 @@ public class Main {
             }
             cache.put(parsedCommand.get(1), toStore);
             response = "+OK\r\n";
-
+            System.out.println("Get here");
 
             // Pass the comamnds 
             // The command is wrong because I also need the number
