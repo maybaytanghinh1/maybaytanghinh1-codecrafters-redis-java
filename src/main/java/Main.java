@@ -23,6 +23,7 @@ public class Main {
     public static String master_replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
     public static long master_repl_offset = 0;
     public static List<OutputStream> replicas = new ArrayList<>();
+    public static int offset = 0; 
 
     public static void main(String[] args) throws IOException {
         System.out.println("Log will happen here");
@@ -103,19 +104,23 @@ class ClientHandler implements Runnable {
         }
 
     }
-
+    
     @Override
     public void run() {
         System.out.println("Get to the run");
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream())); 
+
             os = socket.getOutputStream();
             String line;
             List<String> command = new ArrayList<>();
             int commandLines = 0;
-
+            int bytesRead = 0; // Variable to track bytes read for each line
+            Main.offset += bytesRead;
             while ((line = in.readLine()) != null) {
-                System.out.println("line in run: " + line);
+                // System.out.println("line in run: " + line);
+                bytesRead = line.length() + 2; // \r\n adds 2 bytes
+                Main.offset += bytesRead;
                 if (commandLines == 0) {
                     commandLines = 1 + 2 * Integer.parseInt(line.substring(1));
                     command.add(line);
@@ -127,7 +132,6 @@ class ClientHandler implements Runnable {
                     commandLines = 0;
                     command.clear();
                 }
-                System.out.println("Get to the commands");
                 // Process commands from the queue
                 processCommands();
             }
@@ -137,7 +141,6 @@ class ClientHandler implements Runnable {
     }
 
     private void processCommands() throws IOException {
-        System.out.println("Get... toto");
         while (!queue.isEmpty()) {
             String command = queue.poll();
             if (command != null) {
@@ -145,9 +148,22 @@ class ClientHandler implements Runnable {
                 String cmd = lines[2].toLowerCase();
                 if (cmd.equals("ping")) {
                     Main.replicas.add(os);
-                    write("+PONG\r\n");
+                    System.out.println("Master is here");
+                    if (role == "master") {
+                        write("+PONG\r\n");
+                    }
                 } else if (cmd.equals("replconf")) {
-                    write("+OK\r\n");
+                    for (String tmp : lines) {
+                        System.out.println(tmp);
+                    }
+                    // TODO there should be a way to store this
+                    System.out.println(lines[3]);
+                    if (lines[4].equals("GETACK")) {
+                        os.write(String.format("*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$%s\r\n%d\r\n", Integer.toString(Main.offset).length(), Main.offset).getBytes());
+                    } else {
+                        write("+OK\r\n");
+                    }
+                    
                 } else if (cmd.equals("psync")) {
                     write("+FULLRESYNC %s 0\r\n".formatted(Main.master_replid));
                     byte[] contents = HexFormat.of().parseHex(
