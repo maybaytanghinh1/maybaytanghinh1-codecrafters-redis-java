@@ -60,10 +60,13 @@ public class Main {
             // PSYNC ? -1
             os.write("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".getBytes());
             System.out.println("line=" + in.readLine());
+            // Minh tuong no hadnel roi, maybe test acse cuar minh
+            os.write("*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n".getBytes());
             new Thread(new ClientHandler(socket, role)).start();
         }
 
         try {
+            // System.out.println("Get in here 2");
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
             while (true) {
@@ -103,6 +106,7 @@ class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("Get to the run");
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             os = socket.getOutputStream();
@@ -111,7 +115,7 @@ class ClientHandler implements Runnable {
             int commandLines = 0;
 
             while ((line = in.readLine()) != null) {
-                System.out.println("line: " + line);
+                System.out.println("line in run: " + line);
                 if (commandLines == 0) {
                     commandLines = 1 + 2 * Integer.parseInt(line.substring(1));
                     command.add(line);
@@ -123,7 +127,7 @@ class ClientHandler implements Runnable {
                     commandLines = 0;
                     command.clear();
                 }
-
+                System.out.println("Get to the commands");
                 // Process commands from the queue
                 processCommands();
             }
@@ -133,6 +137,7 @@ class ClientHandler implements Runnable {
     }
 
     private void processCommands() throws IOException {
+        System.out.println("Get... toto");
         while (!queue.isEmpty()) {
             String command = queue.poll();
             if (command != null) {
