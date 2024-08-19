@@ -22,6 +22,7 @@ public class Main {
     // master-only
     public static String master_replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
     public static long master_repl_offset = 0;
+    public static List<OutputStream> replicas = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
         System.out.println("Log will happen here");
@@ -59,7 +60,7 @@ public class Main {
             // PSYNC ? -1
             os.write("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n".getBytes());
             System.out.println("line=" + in.readLine());
-            new Thread(new ClientHandler(socket)).start();
+            new Thread(new ClientHandler(socket, role)).start();
         }
 
         try {
@@ -67,13 +68,14 @@ public class Main {
             serverSocket.setReuseAddress(true);
             while (true) {
                 clientSocket = serverSocket.accept();
-                new Thread(new ClientHandler(clientSocket)).start();
+                new Thread(new ClientHandler(clientSocket, role)).start();
             }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
         }
     }
 }
+
 
 class ClientHandler implements Runnable {
     private Socket socket;
@@ -82,11 +84,15 @@ class ClientHandler implements Runnable {
     private static final Map<String, String> map = new HashMap<>();
     private static final Map<String, Long> expiry = new HashMap<>();
     private static final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
+    public String role; 
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, String role) {
         this.socket = socket;
+        this.role = role; 
         try {
             // Wait for 1 second (1000 milliseconds)
+            // TODO I do not know if I have to sleep here. It seems wrong to me for some reason. 
+            // I am not 100% sure. I finally figure this out fo rnwo. 
             Thread.sleep(500);
         } catch (InterruptedException e) {
             // Handle the exception if the thread is interrupted while sleeping
@@ -132,8 +138,8 @@ class ClientHandler implements Runnable {
             if (command != null) {
                 String[] lines = command.split("\r\n");
                 String cmd = lines[2].toLowerCase();
-
                 if (cmd.equals("ping")) {
+                    Main.replicas.add(os);
                     write("+PONG\r\n");
                 } else if (cmd.equals("replconf")) {
                     write("+OK\r\n");
@@ -149,13 +155,21 @@ class ClientHandler implements Runnable {
                 } else if (cmd.equals("set")) {
                     String key = lines[4];
                     String value = lines[6];
+                    command = String.format("*3\r\n$3\r\nSET\r\n$%d\r\n%s\r\n$%d\r\n%s\r\n",key.length(), key, value.length(), value);
+                    if (role == "master") {
+                        for (OutputStream os_slave : Main.replicas) {
+                            os_slave.write(command.getBytes());
+                        }
+                    }
                     System.out.println("SET Key and Value: " + key + " = " + value);
                     map.put(key, value);
                     if (lines.length == 11 && lines[8].equalsIgnoreCase("px")) {
                         int millis = Integer.parseInt(lines[10]);
                         expiry.put(key, System.currentTimeMillis() + millis);
                     }
-                    write("+OK\r\n");
+                    if (role == "master") {
+                        write("+OK\r\n");
+                    }
                 } else if (cmd.equals("get")) {
                     String key = lines[4];
                     String value = map.get(key);
@@ -174,13 +188,12 @@ class ClientHandler implements Runnable {
                         write(bulkString(value));
                     }
                 } else if (cmd.equals("info")) {
-                    List<String> kvps = new ArrayList<>();
-                    kvps.add("role:" + Main.role);
-                    if (Main.role.equals("master")) {
-                        kvps.add("master_replid:" + Main.master_replid);
-                        kvps.add("master_repl_offset:" + Main.master_repl_offset);
-                    }
-                    write(bulkString(kvps));
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("role:").append(role).append("\n");
+                    sb.append("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\n");
+                    sb.append("master_repl_offset:0");
+                    String str = sb.toString();
+                    write("$" + str.length() + "\r\n" + str + "\r\n");
                 }
             }
         }
