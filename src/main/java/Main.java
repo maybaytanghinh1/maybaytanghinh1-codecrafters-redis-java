@@ -216,7 +216,7 @@ class ClientHandler implements Runnable {
                     String str = sb.toString();
                     write("$" + str.length() + "\r\n" + str + "\r\n");
                 } else if (cmd.equals("wait")) {
-                    write(":0\r\n");
+                    write(String.format(":%d\r\n", Main.replicas.size()));
                 }
             }
         }
