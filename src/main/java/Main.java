@@ -215,6 +215,8 @@ class ClientHandler implements Runnable {
                     sb.append("master_repl_offset:0");
                     String str = sb.toString();
                     write("$" + str.length() + "\r\n" + str + "\r\n");
+                } else if (cmd.equals("wait")) {
+                    write(":0\r\n");
                 }
             }
         }
