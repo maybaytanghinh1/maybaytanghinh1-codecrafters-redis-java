@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 
 public class Main {
     public static int port = 6379;
@@ -239,9 +242,52 @@ class ClientHandler implements Runnable {
                     } else {
                         write(bulkString(Main.fileName)); 
                     }
+                } else if (cmd.equals("keys")) {
+                    InputStream inputStream = new FileInputStream(new File(Main.dir, Main.fileName));   
+                    byte[] redis = new byte[5];
+                    byte[] version = new byte[4];
+                    inputStream.read(redis);
+                    inputStream.read(version);
+                    System.out.println("Magic String = " +
+                                        new String(redis, StandardCharsets.UTF_8));
+                    System.out.println("Version = " +
+                                        new String(version, StandardCharsets.UTF_8));  
+                    int read;
+                    while ((read = inputStream.read()) != -1) {
+                        if (read == 0xFB) {
+                            getLen(inputStream);
+                            getLen(inputStream);
+                            break;
+                        }
+                        }
+                        int type = inputStream.read();
+                        int len = getLen(inputStream);
+                        byte[] key_bytes = new byte[len];
+                        inputStream.read(key_bytes);
+                        String parsed_key = new String(key_bytes);
+                        write("*1\r\n$" + parsed_key.length() + "\r\n" +
+                                        parsed_key + "\r\n");
                 }
             }
         }
+    }
+
+    private static int getLen(InputStream inputStream) throws IOException {
+        int read;
+        read = inputStream.read();
+        int len_encoding_bit = (read & 0b11000000) >> 6;
+        int len = 0;
+        if (len_encoding_bit == 0) {
+            len = read & 0b00111111;
+        } else if (len_encoding_bit == 1) {
+            int extra_len = inputStream.read();
+            len = ((read & 0b00111111) << 8) + extra_len;
+        } else if (len_encoding_bit == 2) {
+            byte[] extra_len = new byte[4];
+            inputStream.read(extra_len);
+            len = ByteBuffer.wrap(extra_len).getInt();
+        }
+        return len;
     }
 
     private String bulkString(String value) {
