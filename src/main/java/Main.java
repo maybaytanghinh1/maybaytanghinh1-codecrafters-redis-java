@@ -7,11 +7,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.HexFormat;
 
 public class Main {
     public static int port = 6379;
@@ -24,6 +24,8 @@ public class Main {
     public static long master_repl_offset = 0;
     public static List<OutputStream> replicas = new ArrayList<>();
     public static int offset = 0; 
+    public static String dir = ""; 
+    public static String fileName = "";
 
     public static void main(String[] args) throws IOException {
         System.out.println("Log will happen here");
@@ -32,7 +34,7 @@ public class Main {
         }
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
-
+    
         // ./spawn_redis_server.sh --port <PORT>
         if (args.length >= 2 && args[0].equalsIgnoreCase("--port")) {
             port = Integer.parseInt(args[1]);
@@ -64,7 +66,13 @@ public class Main {
             // Minh tuong no hadnel roi, maybe test acse cuar minh
             os.write("*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n".getBytes());
             new Thread(new ClientHandler(socket, role)).start();
+        } 
+        
+        if (args.length >= 4 && args[0].equalsIgnoreCase("--dir")) {
+            dir = args[1];  
+            fileName = args[3]; 
         }
+
 
         try {
             // System.out.println("Get in here 2");
@@ -145,7 +153,9 @@ class ClientHandler implements Runnable {
             String command = queue.poll();
             if (command != null) {
                 String[] lines = command.split("\r\n");
+                System.out.println("Ge to the commands");
                 String cmd = lines[2].toLowerCase();
+                System.out.println(cmd);
                 if (cmd.equals("ping")) {
                     Main.replicas.add(os);
                     System.out.println("Master is here");
@@ -216,7 +226,19 @@ class ClientHandler implements Runnable {
                     String str = sb.toString();
                     write("$" + str.length() + "\r\n" + str + "\r\n");
                 } else if (cmd.equals("wait")) {
+                    // TODO how does it know the ack of the replicas, they might have to send the ack 
+                    // There will be time out. 
+                    // If there is no write commands, then the wait should return nothonig 
                     write(String.format(":%d\r\n", Main.replicas.size()));
+                } else if (cmd.equals("config")) {
+                    System.out.println(lines[6].toLowerCase());
+                    if (lines[6].toLowerCase().equals("dir")) {
+                        write(String.format(
+                            "*2\r\n$3\r\ndir\r\n$%d\r\n%s\r\n", Main.dir.length(), Main.dir
+                        ));
+                    } else {
+                        write(bulkString(Main.fileName)); 
+                    }
                 }
             }
         }
