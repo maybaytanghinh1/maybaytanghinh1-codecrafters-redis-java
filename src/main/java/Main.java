@@ -1,8 +1,3 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -74,6 +69,39 @@ public class Main {
         if (args.length >= 4 && args[0].equalsIgnoreCase("--dir")) {
             dir = args[1];  
             fileName = args[3]; 
+            // Add it here. 
+            File file = new File(dir, fileName);
+            if (file.exists()) {
+                InputStream in = new FileInputStream(file);
+                int b;
+                int lengthEncoding;
+                int valueType;
+                byte[] bytes;
+                String key;
+                String value;
+                // skip
+                while ((b = in.read()) != -1) {
+                // do nothing
+                    if (b == 0xFB) {
+                        Main.getLen(in);
+                        Main.getLen(in);
+                        break;
+                    }
+                }
+                System.out.println("skipped");
+                valueType = in.read(); // value-type
+                System.out.println("valueType=" + valueType);
+
+                lengthEncoding = Main.getLen(in);
+                bytes = in.readNBytes(lengthEncoding);
+                key = new String(bytes);
+
+                lengthEncoding = Main.getLen(in);
+                bytes = in.readNBytes(lengthEncoding);
+                value = new String(bytes);
+                ClientHandler.map.put(key, value);
+                
+            }
         }
 
 
@@ -89,6 +117,24 @@ public class Main {
             System.out.println("IOException: " + e.getMessage());
         }
     }
+
+    public static int getLen(InputStream inputStream) throws IOException {
+        int read;
+        read = inputStream.read();
+        int len_encoding_bit = (read & 0b11000000) >> 6;
+        int len = 0;
+        if (len_encoding_bit == 0) {
+            len = read & 0b00111111;
+        } else if (len_encoding_bit == 1) {
+            int extra_len = inputStream.read();
+            len = ((read & 0b00111111) << 8) + extra_len;
+        } else if (len_encoding_bit == 2) {
+            byte[] extra_len = new byte[4];
+            inputStream.read(extra_len);
+            len = ByteBuffer.wrap(extra_len).getInt();
+        }
+        return len;
+    }
 }
 
 
@@ -96,7 +142,7 @@ class ClientHandler implements Runnable {
     private Socket socket;
     private OutputStream os; 
     // I need to have an array of replica and that it. 
-    private static final Map<String, String> map = new HashMap<>();
+    public static final Map<String, String> map = new HashMap<>();
     private static final Map<String, Long> expiry = new HashMap<>();
     private static final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
     public String role; 
@@ -255,13 +301,13 @@ class ClientHandler implements Runnable {
                     int read;
                     while ((read = inputStream.read()) != -1) {
                         if (read == 0xFB) {
-                            getLen(inputStream);
-                            getLen(inputStream);
+                            Main.getLen(inputStream);
+                            Main.getLen(inputStream);
                             break;
                         }
                         }
                         int type = inputStream.read();
-                        int len = getLen(inputStream);
+                        int len = Main.getLen(inputStream);
                         byte[] key_bytes = new byte[len];
                         inputStream.read(key_bytes);
                         String parsed_key = new String(key_bytes);
@@ -270,24 +316,6 @@ class ClientHandler implements Runnable {
                 }
             }
         }
-    }
-
-    private static int getLen(InputStream inputStream) throws IOException {
-        int read;
-        read = inputStream.read();
-        int len_encoding_bit = (read & 0b11000000) >> 6;
-        int len = 0;
-        if (len_encoding_bit == 0) {
-            len = read & 0b00111111;
-        } else if (len_encoding_bit == 1) {
-            int extra_len = inputStream.read();
-            len = ((read & 0b00111111) << 8) + extra_len;
-        } else if (len_encoding_bit == 2) {
-            byte[] extra_len = new byte[4];
-            inputStream.read(extra_len);
-            len = ByteBuffer.wrap(extra_len).getInt();
-        }
-        return len;
     }
 
     private String bulkString(String value) {
